@@ -447,8 +447,8 @@ export default function App() {
         )}
       </div>
       <div style={{background:"#0f172a",padding:"18px 20px",textAlign:"center"}}>
-        <div style={{fontSize:10,color:"#475569",fontFamily:"'DM Mono',monospace"}}>ACHERNAR ASSETS — INTELLIGENCE BRIEF — CONFIDENTIAL</div>
-        <div style={{fontSize:9,color:"#334155",marginTop:3}}>Al Jazeera · CNN · Bloomberg · Reuters · CNBC · NBC · NPR · PBS · Wikipedia · Axios · Breaking Defense · Stars&Stripes · Oxford Economics · Alma · BFMTV · State Dept</div>
+        <div style={{fontSize:10,color:"#475569",fontFamily:"'DM Mono',monospace"}}>MandAI Tech — INTELLIGENCE BRIEF — CONFIDENTIAL</div>
+        <div style={{fontSize:9,color:"#334155",marginTop:3}}>Sources: Al Jazeera · CNN · Bloomberg · Reuters · CNBC · NBC · NPR · PBS · Wikipedia · Axios · Breaking Defense · Stars&Stripes · Oxford Economics · Alma · BFMTV · State Dept</div>
       </div>
     </div>
   );
