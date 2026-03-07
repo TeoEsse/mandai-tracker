@@ -153,6 +153,42 @@ const CC = [
     economic:"Rial collapsed. Banks restricting. Internet blocked. Hormuz closed.",
     diplomatic:"Ceasefire REJECTED. Interim Leadership Council (Larijani). China envoy Zhai Jun dispatched.",
     keyWatch:"Trump successor intervention. Arsenal depletion. Kurdish front. China mediation." },
+  { cat:"gulf",name:"UAE",flag:"🇦🇪",threat:"CRITICAL",
+    summary:"Day 7: FIRST ballistic missile landing on territory. 1,270+ projectiles. 3 killed, 78 injured. Dubai Police mass SMS warnings re social media. Etihad resuming limited schedule.",
+    military:"1 missile impact + 6 drones landed Day 7. ~92% interception rate declining. DXB T3, Jebel Ali, Palm Jumeirah, Al Dhafra, Fujairah all struck.",
+    economic:"Etihad limited schedule from 6 Mar. Emirates reduced. Insurance 1% hull. Central Bank stable.",
+    diplomatic:"Dubai Police social media crackdown. 20,000 Americans left ME. GCC may act via Peninsula Shield Force.",
+    keyWatch:"First impact precedent. Declining interception rate. Fresh Iranian retaliation risk." },
+  { cat:"gulf",name:"Qatar",flag:"🇶🇦",threat:"CRITICAL",
+    summary:"Stay indoors order. Force majeure LNG. 2 Su-24s shot down. Al Udeid struck. 10 IRGC spies arrested.",
+    military:"115+ ballistic. Al Udeid struck. 2 Su-24s downed.",
+    economic:"Force majeure Ras Laffan + Mesaieed. European gas +50%.",
+    diplomatic:"PM 'categorically rejected' Iran claims. Qatar Airways limited relief flights.",
+    keyWatch:"LNG restart. Stay indoors duration." },
+  { cat:"gulf",name:"Bahrain",flag:"🇧🇭",threat:"CRITICAL",
+    summary:"Oil refinery hit Day 7. 5th Fleet HQ struck. 1 killed. Shia crackdown. AWS offline.",
+    military:"75+ missiles + 123+ drones. Refinery hit. Sheikh Isa Air Base attacked.",
+    economic:"Gulf Air suspended. Refinery fire extinguished — operational.",
+    diplomatic:"Shia citizens arrested for treason. Social media posts prosecuted.",
+    keyWatch:"Refinery. 5th Fleet escalation. Shia unrest." },
+  { cat:"gulf",name:"Saudi Arabia",flag:"🇸🇦",threat:"HIGH",
+    summary:"Ras Tanura (550K b/d) hit twice. US Embassy Riyadh hit. Pipeline bypass active. Anti-Iran shift.",
+    military:"15+ drones intercepted. Ras Tanura struck twice. US Embassy: 2 drones.",
+    economic:"Pipeline bypass active. Aramco reviewing routes.",
+    diplomatic:"Condemned 'flagrant' attack. MBS emergency cabinet. Rubio call.",
+    keyWatch:"Ras Tanura. Peninsula Shield Force. Geographic spread." },
+  { cat:"gulf",name:"Kuwait",flag:"🇰🇼",threat:"HIGH",
+    summary:"6 US KIA at Port Shuaiba. Ali al-Salem struck. Friendly fire: 3 F-15Es downed. US Embassy CLOSED.",
+    military:"97 ballistic + 283 drones intercepted. Ali al-Salem struck. 3 F-15Es friendly fire.",
+    economic:"Airport closed. Port Shuaiba disrupted.",
+    diplomatic:"US Embassy closed. Friendly fire investigation ongoing.",
+    keyWatch:"Friendly fire investigation. Embassy closure duration." },
+  { cat:"gulf",name:"Oman",flag:"🇴🇲",threat:"ELEVATED",
+    summary:"Largely spared. Oil storage damaged. Mediator — pre-war breakthrough brokered but ignored. Exemption eroding.",
+    military:"Not directly struck. 1 storage tank damaged. Maritime strikes off coast.",
+    economic:"Hub role. Oil tanker attacked off coast.",
+    diplomatic:"Pre-war breakthrough (27 Feb) ignored. Muscat as mediation hub.",
+    keyWatch:"Mediation resumption. Whether exemption holds." },
   { cat:"pow",name:"Russia",flag:"🇷🇺",threat:"MODERATE",
     summary:"Putin condemned Khamenei killing as 'cynical murder' but refused to name US. No military support. Major oil/gas beneficiary. Rosatom pulled from Bushehr. No BRICS statement despite Iran membership.",
     military:"No intervention. Shahed now mass-produced in Russia. Rosatom Bushehr pullout.",
@@ -403,7 +439,7 @@ export default function App() {
           </div>
           <h1 style={{fontSize:20,fontWeight:700,margin:"0 0 2px",letterSpacing:"-0.02em"}}>Iran Conflict Geopolitical Tracker</h1>
           <div style={{fontSize:12,color:"#94a3b8"}}>Strike logs · Geopolitical · Military · Economic · Diplomatic</div>
-         
+          <div style={{fontSize:11,color:"#64748b",marginTop:4,fontFamily:"'DM Mono',monospace"}}>Base data: {UPD} · Live updates: on demand via RSS proxy</div>
         </div>
       </div>
       <div style={{background:"#7f1d1d",color:"#fecaca",padding:"12px 20px"}}>
@@ -447,10 +483,9 @@ export default function App() {
         )}
       </div>
       <div style={{background:"#0f172a",padding:"18px 20px",textAlign:"center"}}>
-        <div style={{fontSize:10,color:"#475569",fontFamily:"'DM Mono',monospace"}}>MandAI Tech — INTELLIGENCE BRIEF — CONFIDENTIAL</div>
-        <div style={{fontSize:9,color:"#334155",marginTop:3}}>Sources: Al Jazeera · CNN · Bloomberg · Reuters · CNBC · NBC · NPR · PBS · Wikipedia · Axios · Breaking Defense · Stars&Stripes · Oxford Economics · Alma · BFMTV · State Dept</div>
+        <div style={{fontSize:10,color:"#475569",fontFamily:"'DM Mono',monospace"}}>ACHERNAR ASSETS — INTELLIGENCE BRIEF — CONFIDENTIAL</div>
+        <div style={{fontSize:9,color:"#334155",marginTop:3}}>Al Jazeera · CNN · Bloomberg · Reuters · CNBC · NBC · NPR · PBS · Wikipedia · Axios · Breaking Defense · Stars&Stripes · Oxford Economics · Alma · BFMTV · State Dept</div>
       </div>
     </div>
   );
 }
- 
