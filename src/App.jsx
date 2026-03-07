@@ -403,7 +403,7 @@ export default function App() {
           </div>
           <h1 style={{fontSize:20,fontWeight:700,margin:"0 0 2px",letterSpacing:"-0.02em"}}>Iran Conflict Geopolitical Tracker</h1>
           <div style={{fontSize:12,color:"#94a3b8"}}>Strike logs · Geopolitical · Military · Economic · Diplomatic</div>
-          <div style={{fontSize:11,color:"#64748b",marginTop:4,fontFamily:"'DM Mono',monospace"}}>Base data: {UPD} · Live updates: on demand via RSS proxy</div>
+         
         </div>
       </div>
       <div style={{background:"#7f1d1d",color:"#fecaca",padding:"12px 20px"}}>
