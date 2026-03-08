@@ -1,305 +1,238 @@
-
 /**
  * api/claude-update.js
  * MandAI Iran Conflict Tracker — Daily AI Update Function
  *
- * Trigger:  Vercel Cron (daily at 07:00 CET) or manual GET /api/claude-update
- * Flow:     1. Fetch latest news from NewsAPI for each country/topic
- *           2. Send news + current conflict context to Claude Haiku
- *           3. Receive updated card data + Intel Brief as structured JSON
- *           4. Store result in Upstash Redis with 24 h TTL
+ * Trigger:  Manual GET /api/claude-update  (or cron-job.org / GitHub Actions)
+ * Fix v2:   Split into TWO Claude calls (cards + brief) to avoid max_tokens
+ *           truncation that caused "Unterminated string in JSON" error.
  *
- * Env vars required (set in Vercel → Settings → Environment Variables):
+ * Env vars required (Vercel → Settings → Environment Variables):
  *   ANTHROPIC_API_KEY
  *   NEWS_API_KEY
  *   KV_REST_API_URL
  *   KV_REST_API_TOKEN
  */
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const CACHE_KEY = "mandai_tracker_data";
+const CACHE_KEY         = "mandai_tracker_data";
 const CACHE_TTL_SECONDS = 86400; // 24 hours
 
-// All country / topic names used as NewsAPI search queries and card identifiers
-const COUNTRIES = {
-  belligerents: ["United States", "Israel", "Iran"],
-  gulfStates: ["UAE", "Qatar", "Bahrain", "Saudi Arabia", "Kuwait", "Oman"],
-  greatPowers: [
-    "Russia",
-    "China",
-    "United Kingdom",
-    "France",
-    "Italy",
-    "EU Naval Coalition",
-    "Ukraine",
-  ],
-  regional: [
-    "Turkey",
-    "Kurdish Forces",
-    "Azerbaijan",
-    "Lebanon",
-    "Iraq",
-    "Spain",
-    "Pakistan",
-    "Yemen Houthis",
-    "Sri Lanka",
-  ],
-  energyMarkets: ["Strait of Hormuz", "Global Markets"],
-};
+const ALL_TOPICS = [
+  "United States", "Israel", "Iran",
+  "UAE", "Qatar", "Bahrain", "Saudi Arabia", "Kuwait", "Oman",
+  "Russia", "China", "United Kingdom", "France", "Italy", "EU Naval Coalition", "Ukraine",
+  "Turkey", "Kurdish Forces", "Azerbaijan", "Lebanon", "Iraq", "Spain", "Pakistan",
+  "Yemen Houthis", "Sri Lanka",
+  "Strait of Hormuz", "Global Markets",
+];
 
-// Flat list used for news fetching
-const ALL_TOPICS = Object.values(COUNTRIES).flat();
-
-// ─── Upstash Redis helper (REST API, no SDK needed) ──────────────────────────
+// ─── Upstash Redis SET ────────────────────────────────────────────────────────
 
 async function redisSet(key, value, ttlSeconds) {
-  const url = process.env.KV_REST_API_URL;
+  const url   = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-
   if (!url || !token) throw new Error("Upstash env vars not configured");
 
   const res = await fetch(`${url}/set/${encodeURIComponent(key)}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ value: JSON.stringify(value), ex: ttlSeconds }),
+    method:  "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body:    JSON.stringify({ value: JSON.stringify(value), ex: ttlSeconds }),
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Upstash SET failed: ${res.status} — ${text}`);
-  }
-
+  if (!res.ok) throw new Error(`Upstash SET failed: ${res.status} — ${await res.text()}`);
   return await res.json();
 }
 
-// ─── NewsAPI helper ──────────────────────────────────────────────────────────
+// ─── NewsAPI ──────────────────────────────────────────────────────────────────
 
 async function fetchNewsForTopic(topic) {
   const key = process.env.NEWS_API_KEY;
   if (!key) throw new Error("NEWS_API_KEY not configured");
 
-  // Use "everything" endpoint for Iran-conflict-scoped queries
   const query = encodeURIComponent(`${topic} Iran conflict OR war OR military`);
-  const from = new Date(Date.now() - 48 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0]; // last 48 h
-
-  const url =
-    `https://newsapi.org/v2/everything` +
-    `?q=${query}` +
-    `&from=${from}` +
-    `&sortBy=publishedAt` +
-    `&pageSize=5` +
-    `&language=en` +
-    `&apiKey=${key}`;
+  const from  = new Date(Date.now() - 48 * 3600 * 1000).toISOString().split("T")[0];
+  const url   = `https://newsapi.org/v2/everything?q=${query}&from=${from}&sortBy=publishedAt&pageSize=4&language=en&apiKey=${key}`;
 
   const res = await fetch(url);
-  if (!res.ok) {
-    console.warn(`NewsAPI error for "${topic}": ${res.status}`);
-    return [];
-  }
+  if (!res.ok) { console.warn(`NewsAPI "${topic}": ${res.status}`); return []; }
 
   const data = await res.json();
-  return (data.articles || []).map((a) => ({
-    title: a.title,
-    description: a.description || "",
-    publishedAt: a.publishedAt,
+  return (data.articles || []).map(a => ({
+    title:  a.title,
     source: a.source?.name || "Unknown",
+    date:   a.publishedAt?.slice(0, 10),
   }));
 }
 
-// Fetch news for all topics concurrently (respect free-tier rate limits with
-// a small stagger — 200 ms between batches of 5)
 async function fetchAllNews() {
   const results = {};
-  const topics = ALL_TOPICS;
-  const batchSize = 5;
-
-  for (let i = 0; i < topics.length; i += batchSize) {
-    const batch = topics.slice(i, i + batchSize);
+  for (let i = 0; i < ALL_TOPICS.length; i += 5) {
+    const batch   = ALL_TOPICS.slice(i, i + 5);
     const settled = await Promise.allSettled(
-      batch.map(async (t) => ({ topic: t, articles: await fetchNewsForTopic(t) }))
+      batch.map(async t => ({ topic: t, articles: await fetchNewsForTopic(t) }))
     );
-    settled.forEach((s) => {
-      if (s.status === "fulfilled") {
-        results[s.value.topic] = s.value.articles;
-      } else {
-        console.warn("News fetch failed:", s.reason);
-      }
+    settled.forEach(s => {
+      if (s.status === "fulfilled") results[s.value.topic] = s.value.articles;
     });
-    // Small stagger between batches to avoid NewsAPI rate limits
-    if (i + batchSize < topics.length) {
-      await new Promise((r) => setTimeout(r, 200));
-    }
+    if (i + 5 < ALL_TOPICS.length) await new Promise(r => setTimeout(r, 200));
   }
-
   return results;
 }
 
-// ─── Claude prompt builder ───────────────────────────────────────────────────
-
-function buildPrompt(newsMap) {
-  const today = new Date().toISOString().split("T")[0];
-
-  // Summarise news into the prompt — keep it compact for Haiku token budget
-  const newsSummary = ALL_TOPICS.map((topic) => {
+function buildNewsSummary(newsMap, topics) {
+  return topics.map(topic => {
     const articles = newsMap[topic] || [];
-    if (!articles.length) return `### ${topic}\nNo recent news available.\n`;
-    const lines = articles
-      .map((a) => `- [${a.source}] ${a.title} (${a.publishedAt?.slice(0, 10)})`)
-      .join("\n");
-    return `### ${topic}\n${lines}\n`;
+    if (!articles.length) return `### ${topic}\nNo recent news.\n`;
+    return `### ${topic}\n${articles.map(a => `- [${a.source}] ${a.title} (${a.date})`).join("\n")}\n`;
   }).join("\n");
-
-  return `You are a professional geopolitical intelligence analyst producing structured updates for the MandAI Iran Conflict Tracker (${today}).
-
-The tracker monitors the 2026 Iran–US–Israel conflict and related actors. Below is today's latest news feed grouped by actor/topic.
-
----
-${newsSummary}
----
-
-Using the news above, produce an updated JSON object with the following exact structure. Be concise, factual, and intelligence-brief in style (no hedging phrases, no markdown inside strings).
-
-Return ONLY valid JSON — no prose, no markdown fences. Schema:
-
-{
-  "updatedAt": "<ISO timestamp>",
-  "cards": [
-    {
-      "name": "<exact actor name>",
-      "threat": "<CRITICAL|HIGH|ELEVATED|MODERATE|LOW>",
-      "summary": "<2–3 sentence current status summary>",
-      "military": "<1–2 sentence military posture update>",
-      "economic": "<1–2 sentence economic/sanctions update>",
-      "diplomatic": "<1–2 sentence diplomatic posture update>",
-      "keyWatch": "<single most critical watch item>"
-    }
-  ],
-  "intelBrief": {
-    "executiveSummary": "<3–4 sentence top-level situation summary>",
-    "militaryCampaign": "<2–3 sentences on US/Israel air/strike campaign status>",
-    "iranResponse": "<2–3 sentences on Iran retaliatory posture and actions>",
-    "gulfRegional": "<2–3 sentences on Gulf states and regional actor dynamics>",
-    "energyMarkets": "<2–3 sentences on Hormuz, oil prices, shipping disruption>",
-    "usPolitical": "<2–3 sentences on US political situation, War Powers, Congress>",
-    "watchlist": "<3–5 bullet points as a JSON array of strings, each a critical watch item>"
-  }
 }
 
-Actor names to use exactly (in this order in the cards array):
-United States, Israel, Iran,
-UAE, Qatar, Bahrain, Saudi Arabia, Kuwait, Oman,
-Russia, China, United Kingdom, France, Italy, EU Naval Coalition, Ukraine,
-Turkey, Kurdish Forces, Azerbaijan, Lebanon, Iraq, Spain, Pakistan, Yemen Houthis, Sri Lanka,
-Strait of Hormuz, Global Markets
-
-Threat level guidance:
-- CRITICAL: active combat operations / imminent escalation
-- HIGH: significant military posture, direct involvement
-- ELEVATED: strong indirect involvement, significant risk
-- MODERATE: monitoring, indirect effects
-- LOW: peripheral, minimal direct impact
-
-Return ONLY the JSON object.`;
-}
-
-// ─── Claude API call ─────────────────────────────────────────────────────────
+// ─── Claude API call ──────────────────────────────────────────────────────────
 
 async function callClaude(prompt) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not configured");
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
+    method:  "POST",
     headers: {
-      "x-api-key": apiKey,
+      "x-api-key":         apiKey,
       "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
+      "Content-Type":      "application/json",
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
+      model:      "claude-haiku-4-5-20251001",
+      max_tokens: 8000,
+      messages:   [{ role: "user", content: prompt }],
     }),
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Claude API error: ${res.status} — ${text}`);
-  }
+  if (!res.ok) throw new Error(`Claude API error: ${res.status} — ${await res.text()}`);
 
-  const data = await res.json();
+  const data    = await res.json();
   const rawText = data?.content?.[0]?.text || "";
-
-  // Strip any accidental markdown fences before parsing
   const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
   try {
     return JSON.parse(cleaned);
   } catch (e) {
-    console.error("JSON parse error. Raw Claude output:", rawText.slice(0, 500));
-    throw new Error(`Failed to parse Claude response as JSON: ${e.message}`);
+    console.error("JSON parse failed. First 600 chars:\n", rawText.slice(0, 600));
+    throw new Error(`Failed to parse Claude JSON: ${e.message}`);
   }
+}
+
+// ─── CALL 1 prompt: 27 country cards ─────────────────────────────────────────
+
+function buildCardsPrompt(newsMap) {
+  const today       = new Date().toISOString().split("T")[0];
+  const newsSummary = buildNewsSummary(newsMap, ALL_TOPICS);
+
+  return `You are a geopolitical intelligence analyst. Today is ${today}.
+This is the 2026 Iran-US-Israel conflict tracker. Below is the latest news per actor.
+
+${newsSummary}
+
+Return ONLY a valid JSON array — no prose, no markdown, no code fences.
+Each element must follow this exact schema:
+{
+  "name": "<exact actor name>",
+  "threat": "<CRITICAL|HIGH|ELEVATED|MODERATE|LOW>",
+  "summary": "<2-3 sentences on current status>",
+  "military": "<1-2 sentences on military posture>",
+  "economic": "<1-2 sentences on economic situation>",
+  "diplomatic": "<1-2 sentences on diplomatic posture>",
+  "keyWatch": "<single most critical watch item>"
+}
+
+Actor names — use EXACTLY these, in this order:
+United States, Israel, Iran, UAE, Qatar, Bahrain, Saudi Arabia, Kuwait, Oman,
+Russia, China, United Kingdom, France, Italy, EU Naval Coalition, Ukraine,
+Turkey, Kurdish Forces, Azerbaijan, Lebanon, Iraq, Spain, Pakistan, Yemen Houthis, Sri Lanka,
+Strait of Hormuz, Global Markets
+
+Threat levels: CRITICAL=active combat/imminent escalation, HIGH=direct involvement,
+ELEVATED=indirect but significant, MODERATE=monitoring, LOW=peripheral.
+
+Keep each field SHORT — intelligence-brief style, no hedging. Return ONLY the JSON array, nothing else.`;
+}
+
+// ─── CALL 2 prompt: Intel Brief ───────────────────────────────────────────────
+
+function buildBriefPrompt(newsMap) {
+  const today       = new Date().toISOString().split("T")[0];
+  const keyTopics   = ["United States", "Israel", "Iran", "UAE", "Saudi Arabia", "Qatar", "Kuwait", "Lebanon", "Strait of Hormuz", "Global Markets"];
+  const newsSummary = buildNewsSummary(newsMap, keyTopics);
+
+  return `You are a geopolitical intelligence analyst writing a classified daily brief. Today is ${today}.
+This is the 2026 Iran-US-Israel conflict. Below is today's latest news.
+
+${newsSummary}
+
+Return ONLY a valid JSON object — no prose, no markdown, no code fences:
+{
+  "executiveSummary": "<3-4 sentences: overall situation summary>",
+  "militaryCampaign": "<2-3 sentences: US/Israel combined strike campaign status>",
+  "iranResponse": "<2-3 sentences: Iran retaliation posture and remaining capacity>",
+  "gulfRegional": "<2-3 sentences: Gulf states and regional actor dynamics>",
+  "energyMarkets": "<2-3 sentences: Hormuz, oil prices, shipping disruption>",
+  "usPolitical": "<2-3 sentences: US political situation, War Powers, Congress>",
+  "watchlist": ["<watch item 1>", "<watch item 2>", "<watch item 3>", "<watch item 4>", "<watch item 5>"]
+}
+
+watchlist = JSON array of exactly 5 short strings, each a critical watch item.
+Intelligence-brief style: factual, no hedging, no filler. Return ONLY the JSON object.`;
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  // Allow only GET (Vercel Cron sends GET) and reject other methods
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Optional: simple secret to prevent unauthorised manual triggers
-  // Set CRON_SECRET in Vercel env vars and pass ?secret=xxx to protect endpoint
+  // Optional: protect with CRON_SECRET env var
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret) {
     const provided = req.query?.secret || req.headers?.["x-cron-secret"];
-    if (provided !== cronSecret) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    if (provided !== cronSecret) return res.status(401).json({ error: "Unauthorized" });
   }
 
-  console.log(`[claude-update] Starting daily update — ${new Date().toISOString()}`);
+  console.log(`[claude-update] Starting — ${new Date().toISOString()}`);
 
   try {
-    // 1. Fetch news for all topics
+    // 1. Fetch all news
     console.log("[claude-update] Fetching news from NewsAPI...");
     const newsMap = await fetchAllNews();
-    const topicsWithNews = Object.values(newsMap).filter((a) => a.length > 0).length;
-    console.log(`[claude-update] News fetched: ${topicsWithNews}/${ALL_TOPICS.length} topics have articles`);
+    console.log(`[claude-update] News fetched for ${Object.keys(newsMap).length} topics`);
 
-    // 2. Build prompt and call Claude
-    console.log("[claude-update] Calling Claude API...");
-    const prompt = buildPrompt(newsMap);
-    const payload = await callClaude(prompt);
-    console.log(`[claude-update] Claude response received — ${payload.cards?.length || 0} cards`);
+    // 2. Call Claude for cards (Call 1)
+    console.log("[claude-update] Calling Claude — cards...");
+    const cards = await callClaude(buildCardsPrompt(newsMap));
+    if (!Array.isArray(cards)) throw new Error("Cards response is not an array");
+    console.log(`[claude-update] Cards received: ${cards.length}`);
 
-    // 3. Attach metadata
-    payload.updatedAt = new Date().toISOString();
-    payload.newsTopicsCovered = topicsWithNews;
+    // 3. Call Claude for Intel Brief (Call 2)
+    console.log("[claude-update] Calling Claude — Intel Brief...");
+    const intelBrief = await callClaude(buildBriefPrompt(newsMap));
+    console.log("[claude-update] Intel Brief received ✓");
 
-    // 4. Store in Upstash Redis
+    // 4. Assemble and cache
+    const payload = {
+      updatedAt:  new Date().toISOString(),
+      cards,
+      intelBrief,
+    };
+
     console.log("[claude-update] Writing to Upstash Redis...");
     await redisSet(CACHE_KEY, payload, CACHE_TTL_SECONDS);
-    console.log("[claude-update] Cache written successfully");
+    console.log("[claude-update] All done ✓");
 
     return res.status(200).json({
-      success: true,
+      success:   true,
       updatedAt: payload.updatedAt,
-      cardCount: payload.cards?.length || 0,
-      newsTopicsCovered: topicsWithNews,
+      cardCount: cards.length,
     });
+
   } catch (err) {
     console.error("[claude-update] ERROR:", err.message);
-    return res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    return res.status(500).json({ success: false, error: err.message });
   }
 }
