@@ -16,7 +16,7 @@ const SL = {
       {date:"6 Mar",title:"⚡ 30+ Ships — Drone Carrier Burning",t:"CRITICAL",items:["Iran dead: 1,332 (Red Crescent). Hengaw: 2,400 inc 310 civilians","UNICEF: at least 181 children killed","Trump: 'UNCONDITIONAL SURRENDER' — 'no time limits'","IDF: 50 jets destroyed Khamenei's underground bunker","B-2s: penetrator bombs on deeply buried missile launchers","IDF: 2,500 strikes, 6,000+ weapons, 80% air defences destroyed","Cooper: 30+ ships. Drone carrier burning. Missiles -90%, drones -83%","House 212-219 + Senate 53-47: both rejected war powers"],def:"Iran dead 1,332. 181 children. Khamenei bunker destroyed. UNCONDITIONAL SURRENDER."},
     ]
   },
-  UAE: { flag: "🇦🇪", threat: "CRITICAL", summary: "Iranian strikes ON UAE. 1,270+ projectiles. 3 killed, 78 injured. Day 7: FIRST ballistic missile landing. Interception declining. DXB T3, Jebel Ali, Palm Jumeirah, Al Dhafra, Fujairah all struck.",
+  UAE: { flag: "🇦🇪", threat: "CRITICAL", summary: "Day 9. 205 ballistic missiles tracked (190 destroyed, 2 impacted). 1,184 drones detected (1,110 intercepted, 74 impacted). 3 killed, 112 injured. Gulf allies running low on interceptors (CBS, 7 Mar). 2 data centres directly struck, offline. DXB T3, Jebel Ali, Palm Jumeirah, Al Dhafra all hit.",
     stats: [{l:"Ballistic",v:"196+",s:"181 intercepted"},{l:"Drones",v:"1,072+",s:"1,001 intercepted"},{l:"Cruise",v:"3",s:"100%"},{l:"Killed",v:"3",s:""},{l:"Injured",v:"78",s:""}],
     days: [
       {date:"28 Feb",title:"Opening Barrage",t:"CRITICAL",items:["Palm Jumeirah: Shahed near Fairmont","DXB T3: 1 killed, 4 injured. Evacuated","Jebel Ali Port: fire","Al Dhafra: US forces targeted","AWS DC: mec1-az2 fire"],def:"137 missiles, 209 drones."},
@@ -45,7 +45,7 @@ const SL = {
       {date:"6 Mar",title:"⚡ Oil Refinery Hit",t:"CRITICAL",items:["Missile hit state-run refinery","Fire extinguished — operational","New explosions across country"],def:"Energy infrastructure escalation."},
     ]
   },
-  "Saudi Arabia": { flag: "🇸🇦", threat: "HIGH", summary: "Iranian strikes ON Saudi Arabia. Ras Tanura (550K b/d) hit twice. US Embassy Riyadh hit. Pipeline bypass active.",
+  "Saudi Arabia": { flag: "🇸🇦", threat: "HIGH", summary: "Day 9. Ras Tanura (550K b/d) — largest domestic refinery — forced closure. East-West pipeline bypass active. Zelensky called MBS 7 Mar, offered Ukraine Shahed interception expertise. US-Qatar in talks to buy Ukrainian interceptor drones.",
     stats: [{l:"Ras Tanura",v:"2x",s:"550K b/d"},{l:"Embassy",v:"Hit",s:"2 drones"},{l:"Drones",v:"15+",s:"intercepted"},{l:"Killed",v:"0",s:""},{l:"Pipeline",v:"Active",s:"bypass"}],
     days: [
       {date:"28 Feb",title:"Riyadh + East",t:"HIGH",items:["Explosions eastern Riyadh","Prince Sultan + airport intercepted"],def:"Did NOT allow airspace for Iran strikes."},
@@ -53,7 +53,7 @@ const SL = {
       {date:"4-6 Mar",title:"Cabinet + Northern Intercept",t:"ELEVATED",items:["MBS emergency cabinet","Drone near al-Jawf (north)","Rubio call"],def:"Geographic spread."},
     ]
   },
-  Kuwait: { flag: "🇰🇼", threat: "HIGH", summary: "Iranian strikes ON Kuwait. 6 US KIA. Ali al-Salem struck. Friendly fire: 3 F-15Es downed. US Embassy CLOSED.",
+  Kuwait: { flag: "🇰🇼", threat: "CRITICAL", summary: "Day 9. Iran claiming large drone attack on US positions ongoing. Sirens in Kuwait City. 6 US KIA at Port Shuaiba. Ali al-Salem struck. Friendly fire: 3 F-15Es downed. US Embassy CLOSED. Amazon AWS Bahrain data centre struck.",
     stats: [{l:"Ballistic",v:"97",s:"intercepted"},{l:"Drones",v:"283",s:"intercepted"},{l:"US KIA",v:"6",s:"Port Shuaiba"},{l:"Civilian",v:"1",s:"girl killed"},{l:"Embassy",v:"CLOSED",s:""}],
     days: [
       {date:"28 Feb",title:"Ali al-Salem + Airport",t:"CRITICAL",items:["Ali al-Salem struck","Airport: drone damage","Ambassador summoned"],def:"Satellite: 4+ impacts."},
@@ -136,7 +136,7 @@ const SL = {
 
 const CC = [
   { cat:"bell",name:"United States",flag:"🇺🇸",threat:"CRITICAL",
-    summary:"Day 7. ~2,000 targets. 30+ ships. B-2s + B-52s + reverse-engineered Iranian drones. First 100hrs: $3.7B. Hegseth: 'If you think you've seen something, just wait.' Both chambers rejected war powers. Trump wants to pick Iran's successor. 20,000 Americans left ME. Lockheed/RTX to WH Friday — supplemental expected.",
+    summary:"Day 9. 3,000+ targets struck. Trump: 'go in and clean out everything' — regime change only end state. War powers rejected both chambers. USS George H.W. Bush CSG ready for deployment — 3rd CSG imminent. 6 US KIA confirmed (Dover transfer 7 Mar). Hegseth: 'America winning decisively, more forces arriving.' Supplemental expected.",
     military:"B-2s + B-52s. 2,000 targets. 30+ ships. 300 launchers. 6 KIA. CIA arming Kurds. Lockheed/RTX Friday.",
     economic:"Brent $82.76. US gas $3.19 (4yr spike). Dow -1,000. Goldman CEO: 'weeks to digest'.",
     diplomatic:"House 212-219 + Senate 53-47 rejected. Trump: pick successor. China envoy. France bases yes, Spain no.",
@@ -616,7 +616,7 @@ export default function App() {
       </div>
       <div style={{background:"#7f1d1d",color:"#fecaca",padding:"12px 20px"}}>
         <div style={{maxWidth:820,margin:"0 auto",fontSize:12.5,lineHeight:1.7}}>
-          <strong style={{color:"#fbbf24"}}>⚡ DAY {DAY}:</strong> House rejected war powers 212-219. Trump wants to pick Iran's successor. 'Overwhelming' wave coming. First UAE missile landing. Bahrain refinery hit. Iran: 1,332+ dead. Araghchi rejected ceasefire. Kospi -11%. Hormuz closed.{" "}
+          <strong style={{color:"#fbbf24"}}>⚡ DAY {DAY}:</strong> Israel hits Iran oil refineries — first time. Assembly of Experts: consensus on new Supreme Leader. UAE: 1,184 drones, 205 missiles total. Gulf allies low on interceptors. Kuwait: drone attack ongoing. Trump: 'clean out' Iran regime. Hormuz closed. Brent $85.{" "}
           <strong style={{color:"#fbbf24"}}>→ Open a card and click "Fetch latest news" for live updates.</strong>
         </div>
       </div>
