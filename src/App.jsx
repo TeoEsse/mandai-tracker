@@ -337,29 +337,9 @@ function mergeIntelBrief(defaults, aiBrief) {
   };
 }
 
-// ─── News feed helper ──────────────────────────────────────────────────────────
-const SEARCH_TERMS = {
-  default:               "iran conflict war",
-  "United States":       "united states iran war strikes",
-  "Israel":              "israel iran strikes",
-  "Iran":                "iran war strikes",
-  "Lebanon":             "lebanon hezbollah israel",
-  "UAE":                 "UAE iran missile strike",
-  "Qatar":               "qatar iran conflict",
-  "Bahrain":             "bahrain iran strike",
-  "Saudi Arabia":        "saudi arabia iran",
-  "Kuwait":              "kuwait iran conflict",
-  "Oman":                "oman iran",
-  "Russia":              "russia iran war",
-  "China":               "china iran conflict",
-  "Turkey":              "turkey iran",
-  "Italy":               "italy iran war crosetto meloni",
-  "Strait of Hormuz":    "hormuz strait oil tanker",
-  "Global Markets":      "oil price war iran markets",
-};
-
-async function fetchLiveUpdate(name) {
-  const q = encodeURIComponent(SEARCH_TERMS[name] || SEARCH_TERMS.default);
+// ─── News feed helper (single global feed) ───────────────────────────────────
+async function fetchLiveNews() {
+  const q = encodeURIComponent("iran conflict war strikes");
   const res = await fetch(`/api/feed?q=${q}`);
   if (!res.ok) throw new Error(`Feed error ${res.status}`);
   const data = await res.json();
@@ -445,6 +425,7 @@ function IntelBrief({ brief }) {
           </div>
         </div>
       </div>
+      <GlobalNewsFeed />
       {brief.sections.map(s => (
         <div key={s.id} style={{ background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 10, overflow: "hidden" }}>
           <div style={{ padding: "12px 18px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
@@ -463,27 +444,51 @@ function IntelBrief({ brief }) {
   );
 }
 
-function LiveBox({ name }) {
-  const [state, setState] = useState("idle");
+function GlobalNewsFeed() {
+  const [state, setState]     = useState("idle");
   const [liveData, setLiveData] = useState(null);
-  const [err, setErr] = useState(null);
+  const [err, setErr]         = useState(null);
+
   async function doFetch() {
     setState("loading"); setErr(null);
-    try { const d = await fetchLiveUpdate(name); setLiveData(d); setState("done"); }
+    try { const d = await fetchLiveNews(); setLiveData(d); setState("done"); }
     catch (e) { setErr(e.message); setState("error"); }
   }
+
   return (
-    <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: state === "done" ? 10 : 0 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "#0369a1", letterSpacing: "0.08em" }}>🌐 LIVE NEWS FEED</span>
-        {state === "idle" && <button onClick={doFetch} style={{ fontSize: 12, padding: "5px 12px", background: "#0f172a", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}>🔄 Fetch latest news</button>}
-        {state === "loading" && <span style={{ fontSize: 12, color: "#0369a1", display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid #bae6fd", borderTop: "2px solid #0369a1", display: "inline-block", animation: "spin 0.8s linear infinite" }} />Fetching...</span>}
-        {(state === "done" || state === "error") && <button onClick={doFetch} style={{ fontSize: 11, padding: "4px 10px", background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}>🔄 Refresh</button>}
+    <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: state === "done" ? 12 : 0 }}>
+        <div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#0369a1", letterSpacing: "0.08em" }}>🌐 LIVE NEWS FEED</span>
+          <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>
+            Latest headlines on the conflict — Reuters · Al Jazeera · BBC
+          </div>
+        </div>
+        {state === "idle" && (
+          <button onClick={doFetch} style={{ fontSize: 12, padding: "6px 14px", background: "#0f172a", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
+            🔄 Fetch latest news
+          </button>
+        )}
+        {state === "loading" && (
+          <span style={{ fontSize: 12, color: "#0369a1", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid #bae6fd", borderTop: "2px solid #0369a1", display: "inline-block", animation: "spin 0.8s linear infinite" }} />
+            Fetching…
+          </span>
+        )}
+        {(state === "done" || state === "error") && (
+          <button onClick={doFetch} style={{ fontSize: 11, padding: "4px 10px", background: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd", borderRadius: 6, cursor: "pointer" }}>
+            🔄 Refresh
+          </button>
+        )}
       </div>
-      {state === "error" && <div style={{ fontSize: 12, color: "#dc2626", marginTop: 6 }}>⚠️ {err} — please retry</div>}
+      {state === "error" && (
+        <div style={{ fontSize: 12, color: "#dc2626", marginTop: 6 }}>⚠️ {err} — please retry</div>
+      )}
       {state === "done" && liveData && (
         <div>
-          <div style={{ fontSize: 10, color: "#64748b", marginBottom: 8 }}>Reuters · Al Jazeera · BBC · updated {new Date().toLocaleTimeString()}</div>
+          <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 8 }}>
+            Updated {new Date().toLocaleTimeString()}
+          </div>
           {liveData.items.map((item, i) => (
             <a key={i} href={item.link} target="_blank" rel="noreferrer" style={{ display: "block", textDecoration: "none", padding: "8px 0", borderBottom: i < liveData.items.length - 1 ? "1px solid #e0f2fe" : "none" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#0c4a6e", lineHeight: 1.4, marginBottom: 3 }}>{item.title}</div>
@@ -512,7 +517,6 @@ function CCard({ c, isE, onT }) {
       {isE && (
         <div style={{ padding: "4px 18px 18px", borderTop: "1px solid #f1f5f9" }}>
           <div style={{ fontSize: 13.5, lineHeight: 1.65, color: "#334155", marginBottom: 16, fontWeight: 500 }}>{c.summary}</div>
-          <LiveBox name={c.name} />
           <Sec title="Military"   content={c.military}   icon="⚔️" />
           <Sec title="Economic"   content={c.economic}   icon="📈" />
           <Sec title="Diplomatic" content={c.diplomatic} icon="🏛️" />
