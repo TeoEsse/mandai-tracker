@@ -1,75 +1,56 @@
-// Vercel serverless function — proxy RSS feeds to avoid CORS
-// Deployed at: /api/feed?name=Iran
-
-const FEEDS = [
-  "https://feeds.reuters.com/reuters/worldNews",
-  "https://www.aljazeera.com/xml/rss/all.xml",
-  "https://feeds.bbci.co.uk/news/world/rss.xml",
-];
-
-const KEYWORDS = {
-  default: ["iran", "conflict", "strike", "missile", "drone", "hormuz"],
-  "United States": ["us ", "united states", "american", "pentagon", "trump", "centcom"],
-  "Israel": ["israel", "idf", "netanyahu"],
-  "Iran": ["iran", "irgc", "tehran", "khamenei"],
-  "Lebanon": ["lebanon", "hezbollah", "beirut"],
-  "UAE": ["uae", "dubai", "abu dhabi", "emirates"],
-  "Qatar": ["qatar", "doha", "al udeid"],
-  "Bahrain": ["bahrain", "manama"],
-  "Saudi Arabia": ["saudi", "riyadh", "aramco"],
-  "Kuwait": ["kuwait"],
-  "Oman": ["oman", "muscat"],
-  "Russia": ["russia", "putin", "moscow"],
-  "China": ["china", "beijing", "xi"],
-  "Turkey": ["turkey", "erdogan", "ankara"],
-  "Strait of Hormuz": ["hormuz", "strait", "tanker", "oil"],
-  "Global Markets": ["oil", "brent", "market", "stock"],
-};
-
-function parseRSS(xml) {
-  const items = [];
-  const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
-  for (const m of matches) {
-    const block = m[1];
-    const get = tag => {
-      const r = block.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`));
-      return r ? (r[1] || r[2] || "").trim() : "";
-    };
-    items.push({
-      title: get("title"),
-      description: get("description"),
-      link: get("link"),
-      pubDate: get("pubDate"),
-    });
-  }
-  return items;
-}
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const name = req.query.name || "default";
-  const kws = KEYWORDS[name] || KEYWORDS.default;
-  const allItems = [];
+  const apiKey = process.env.NEWS_API_KEY;
 
-  for (const feed of FEEDS) {
-    try {
-      const r = await fetch(feed, { headers: { "User-Agent": "MandAI-Tracker/1.0" } });
-      const xml = await r.text();
-      allItems.push(...parseRSS(xml));
-    } catch(e) { /* skip */ }
+  const QUERIES = {
+    default: "iran conflict war",
+    "United States": "united states iran war strikes",
+    "Israel": "israel iran strikes",
+    "Iran": "iran war strikes",
+    "Lebanon": "lebanon hezbollah israel",
+    "UAE": "UAE iran missile strike",
+    "Qatar": "qatar iran conflict",
+    "Bahrain": "bahrain iran strike",
+    "Saudi Arabia": "saudi arabia iran",
+    "Kuwait": "kuwait iran conflict",
+    "Oman": "oman iran",
+    "Russia": "russia iran war",
+    "China": "china iran conflict",
+    "Turkey": "turkey iran",
+    "Italy": "italy iran war crosetto",
+    "Kurdish Forces": "kurdish iran pjak",
+    "Azerbaijan": "azerbaijan iran nakhchivan",
+    "Lebanon": "lebanon hezbollah israel",
+    "Iraq": "iraq iran oil hormuz",
+    "Spain": "spain iran nato",
+    "Pakistan": "pakistan iran conflict",
+    "Yemen / Houthis": "houthis yemen red sea",
+    "Sri Lanka": "sri lanka iran ship",
+    "European Naval Coalition": "europe naval cyprus iran",
+    "Ukraine": "ukraine iran war",
+    "Strait of Hormuz": "hormuz strait oil tanker",
+    "Global Markets": "oil price iran war markets",
+  };
+
+  const q = encodeURIComponent(QUERIES[name] || QUERIES.default);
+  const url = `https://newsapi.org/v2/everything?q=${q}&language=en&sortBy=publishedAt&pageSize=5&apiKey=${apiKey}`;
+
+  try {
+    const r = await fetch(url);
+    const data = await r.json();
+    if (!data.articles || data.articles.length === 0) {
+      return res.status(200).json({ items: [] });
+    }
+    const items = data.articles.map(a => ({
+      title: a.title,
+      source: a.source?.name || "News",
+      date: a.publishedAt ? new Date(a.publishedAt).toLocaleString() : "",
+      link: a.url,
+      snippet: a.description?.slice(0, 150) || "",
+    }));
+    res.status(200).json({ items });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
   }
-
-  const relevant = allItems
-    .filter(item => kws.some(k => `${item.title} ${item.description}`.toLowerCase().includes(k)))
-    .slice(0, 5);
-
-  const result = (relevant.length > 0 ? relevant : allItems.slice(0, 5)).map(item => ({
-    title: item.title,
-    source: (() => { try { return new URL(item.link).hostname.replace("www.", ""); } catch(e) { return "News"; } })(),
-    date: item.pubDate ? new Date(item.pubDate).toLocaleString() : "",
-    link: item.link,
-    snippet: item.description?.replace(/<[^>]*>/g, "").slice(0, 150),
-  }));
-
-  res.status(200).json({ items: result });
 }
