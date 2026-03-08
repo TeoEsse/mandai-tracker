@@ -1,52 +1,61 @@
+const QUERIES = {
+  default: "iran+war+conflict",
+  "United States": "trump+pentagon+iran+strikes",
+  "Israel": "israel+idf+iran",
+  "Iran": "iran+irgc+tehran",
+  "Lebanon": "hezbollah+lebanon",
+  "UAE": "UAE+dubai+missile",
+  "Qatar": "qatar+LNG+al+udeid",
+  "Bahrain": "bahrain+fifth+fleet",
+  "Saudi Arabia": "saudi+aramco+iran",
+  "Kuwait": "kuwait+iran",
+  "Oman": "oman+muscat+iran",
+  "Russia": "russia+iran+war",
+  "China": "china+iran+war",
+  "Italy": "italy+meloni+iran",
+  "Turkey": "turkey+iran",
+  "Kurdish Forces": "kurdish+iran+pjak",
+  "Azerbaijan": "azerbaijan+nakhchivan+iran",
+  "Iraq": "iraq+iran+oil",
+  "Spain": "spain+iran+nato",
+  "Pakistan": "pakistan+iran",
+  "Yemen / Houthis": "houthis+yemen+redsea",
+  "Sri Lanka": "srilanka+iran+ship",
+  "European Naval Coalition": "europe+naval+iran",
+  "Ukraine": "ukraine+zelensky+iran",
+  "Strait of Hormuz": "hormuz+strait+tanker",
+  "Global Markets": "oil+brent+iran+markets",
+};
+
+function parseRSS(xml) {
+  const items = [];
+  const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
+  for (const m of matches) {
+    const block = m[1];
+    const get = tag => {
+      const r = block.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`));
+      return r ? (r[1] || r[2] || "").trim() : "";
+    };
+    items.push({ title: get("title"), description: get("description"), link: get("link"), pubDate: get("pubDate") });
+  }
+  return items;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const name = req.query.name || "default";
-  const apiKey = process.env.NEWS_API_KEY;
-
-  const QUERIES = {
-  default: "iran war",
-  "United States": "trump pentagon centcom iran strikes",
-  "Israel": "idf netanyahu israel iran",
-  "Iran": "tehran irgc khamenei iran regime",
-  "Lebanon": "hezbollah beirut lebanon",
-  "UAE": "dubai emirates uae missile",
-  "Qatar": "qatar doha lng al udeid",
-  "Bahrain": "bahrain manama fifth fleet",
-  "Saudi Arabia": "saudi aramco riyadh mbs",
-  "Kuwait": "kuwait ali al-salem",
-  "Oman": "oman muscat mediator",
-  "Russia": "russia putin iran war",
-  "China": "china beijing xi iran",
-  "Italy": "italy meloni crosetto iran",
-  "Turkey": "turkey erdogan iran",
-  "Kurdish Forces": "kurdish pjak iran iraq",
-  "Azerbaijan": "azerbaijan nakhchivan iran drones",
-  "Iraq": "iraq oil hormuz iran",
-  "Spain": "spain iran nato",
-  "Pakistan": "pakistan iran conflict",
-  "Yemen / Houthis": "houthis yemen red sea bab",
-  "Sri Lanka": "sri lanka iran ship",
-  "European Naval Coalition": "europe naval mediterranean iran",
-  "Ukraine": "ukraine zelensky iran shahed",
-  "Strait of Hormuz": "hormuz strait tanker closure",
-  "Global Markets": "oil brent market iran war",
-};
-
-  const q = encodeURIComponent(QUERIES[name] || QUERIES.default);
-  const url = `https://newsapi.org/v2/everything?q=${q}&language=en&sortBy=publishedAt&pageSize=5&apiKey=${apiKey}`;
+  const q = QUERIES[name] || QUERIES.default;
+  const url = `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`;
 
   try {
-    const r = await fetch(url);
-    const data = await r.json();
-    if (!data.articles || data.articles.length === 0) {
-      return res.status(200).json({ items: [] });
-    }
-    const items = data.articles.map(a => ({
-      title: a.title,
-      source: a.source?.name || "News",
-      date: a.publishedAt ? new Date(a.publishedAt).toLocaleString() : "",
-      link: a.url,
-      snippet: a.description?.slice(0, 150) || "",
+    const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const xml = await r.text();
+    const items = parseRSS(xml).slice(0, 5).map(item => ({
+      title: item.title?.replace(/ - .*$/, ""),
+      source: item.title?.match(/ - (.+)$/)?.[1] || "News",
+      date: item.pubDate ? new Date(item.pubDate).toLocaleString() : "",
+      link: item.link,
+      snippet: item.description?.replace(/<[^>]*>/g, "").slice(0, 150) || "",
     }));
     res.status(200).json({ items });
   } catch(e) {
