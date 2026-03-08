@@ -463,7 +463,7 @@ function IntelBrief() {
     `MANDAI TECH — INTELLIGENCE BRIEF`,
     `${INTEL_BRIEF.day} — Updated: ${INTEL_BRIEF.updated}`,
     `Classification: ${INTEL_BRIEF.classification}`,
-    `Source: ${INTEL_BRIEF.source}`,
+
     ``,
     ...INTEL_BRIEF.sections.map(s => `${s.title}\n\n${s.content}\n`)
   ].join("\n");
@@ -623,7 +623,7 @@ export default function App() {
       <div style={{background:"#fff",borderBottom:"1px solid #e2e8f0",padding:"0 20px",position:"sticky",top:0,zIndex:10}}>
         <div style={{maxWidth:820,margin:"0 auto",display:"flex",overflowX:"auto"}}>
           {cats.map(c=>(<button key={c.id} onClick={()=>setTab(c.id)} style={{padding:"11px 14px",fontSize:12,fontWeight:tab===c.id?700:500,color:tab===c.id?"#0f172a":"#64748b",background:"transparent",border:"none",borderBottom:tab===c.id?"2px solid #0f172a":"2px solid transparent",cursor:"pointer",whiteSpace:"nowrap"}}>
-            {c.label}<span style={{marginLeft:5,fontSize:9,background:tab===c.id?"#0f172a":"#e2e8f0",color:tab===c.id?"#fff":"#64748b",padding:"2px 5px",borderRadius:6,fontFamily:"'DM Mono',monospace"}}>{c.id==="strikes"?Object.keys(SL).length:CC.filter(x=>x.cat===c.id).length}</span>
+            {c.label}<span style={{marginLeft:5,fontSize:9,background:tab===c.id?"#0f172a":"#e2e8f0",color:tab===c.id?"#fff":"#64748b",padding:"2px 5px",borderRadius:6,fontFamily:"'DM Mono',monospace"}}>{c.id==="strikes"?"":CC.filter(x=>x.cat===c.id).length}</span>
           </button>))}
         </div>
       </div>
