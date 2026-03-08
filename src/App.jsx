@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 const CONFLICT_START = new Date("2026-02-28T00:00:00Z");
 const DAY = Math.max(1, Math.floor((Date.now() - CONFLICT_START.getTime()) / 86400000) + 1);
 const TL = { CRITICAL: { color: "#dc2626", bg: "#fef2f2", label: "CRITICAL" }, HIGH: { color: "#ea580c", bg: "#fff7ed", label: "HIGH" }, ELEVATED: { color: "#ca8a04", bg: "#fefce8", label: "ELEVATED" }, MODERATE: { color: "#2563eb", bg: "#eff6ff", label: "MODERATE" }, LOW: { color: "#16a34a", bg: "#f0fdf4", label: "LOW" } };
-const cats = [ { id: "strikes", label: "⚡ Strike Logs" }, { id: "bell", label: "Belligerents" }, { id: "gulf", label: "Gulf States" }, { id: "pow", label: "Great Powers" }, { id: "reg", label: "Regional" }, { id: "nrg", label: "Energy & Markets" } ];
+const cats = [ { id: "strikes", label: "📋 Intel Brief" }, { id: "bell", label: "Belligerents" }, { id: "gulf", label: "Gulf States" }, { id: "pow", label: "Great Powers" }, { id: "reg", label: "Regional" }, { id: "nrg", label: "Energy & Markets" } ];
 const SL = {
   "Iran (incoming)": { flag: "🇮🇷", threat: "CRITICAL", summary: "US/Israeli strikes ON Iran. 1,332 killed (Hengaw: 2,400), 6,000+ wounded. ~2,000 targets. 4,000 munitions / 1,600 sorties. 30+ ships sunk inc. drone carrier IRIS Shahid Bagheri, forward base IRIS Makran (121K tons), Kilo-class submarine, IRIS Dena (torpedoed off Sri Lanka). 300 launchers destroyed. Nuclear sites hit (B-2/MOPs on Fordo/Natanz/Isfahan). Konarak + Bandar Abbas naval bases devastated. 33 civilian sites. Iran launches -90% missiles, -83% drones since Day 1.",
     stats: [{l:"Killed",v:"1,332",s:"Hengaw: 2,400"},{l:"Wounded",v:"6,000+",s:""},{l:"Targets",v:"~2,000",s:"CENTCOM"},{l:"Ships",v:"30+",s:"inc. drone carrier"},{l:"Launchers",v:"300",s:"IDF"}],
@@ -321,7 +321,7 @@ const SEARCH_TERMS = {
 
 async function fetchLiveUpdate(name) {
   const q = encodeURIComponent(SEARCH_TERMS[name] || SEARCH_TERMS.default);
- const res = await fetch(`/api/feed?name=${encodeURIComponent(name)}`);
+  const res = await fetch(`/api/feed?q=${q}`);
   if (!res.ok) throw new Error(`Feed error ${res.status}`);
   const data = await res.json();
   if (!data.items || data.items.length === 0) throw new Error("No articles found");
@@ -345,6 +345,178 @@ function CopyButton({ c }) {
     navigator.clipboard.writeText(parts).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
   }
   return (<button onClick={doCopy} style={{marginTop:8,fontSize:12,padding:"6px 14px",background:copied?"#f0fdf4":"#f1f5f9",color:copied?"#16a34a":"#475569",border:`1px solid ${copied?"#86efac":"#e2e8f0"}`,borderRadius:6,cursor:"pointer",fontWeight:600,transition:"all 0.2s"}}>{copied?"✅ Copied!":"📋 Copy briefing"}</button>);
+}
+
+
+const INTEL_BRIEF = {
+  updated: "8 March 2026",
+  day: "Day 9",
+  classification: "UNCLASSIFIED // OPEN SOURCE",
+  source: "CTP-ISW · GlobalSecurity · ACLED · CENTCOM · IDF · open sources",
+  sections: [
+    {
+      id: "executive",
+      title: "🔴 EXECUTIVE SUMMARY",
+      content: `Operation Epic Fury (US) and Operation Roaring Lion (Israel) entered Day 9. The combined force expanded strikes on Day 8 to include Iranian oil production and storage facilities for the first time — a significant escalation in campaign scope. Iran's retaliatory capacity has degraded by approximately 90% since Day 1 (CENTCOM, 5 Mar). Approximately 120 missile launchers remain operational (IDF, 7 Mar).
+
+The regime faces an acute political crisis: Supreme Leader Khamenei was killed on Day 1 alongside the SNSC Secretary and multiple IRGC chiefs. A Leadership Council has assumed his duties. President Pezeshkian publicly apologised to Gulf states on 7 March — hardline IRGC commanders condemned the statement as weak and unprofessional, exposing deep factional divisions over succession and ceasefire posture.
+
+The Strait of Hormuz remains closed. 150+ tankers anchored. Global markets under severe stress.`
+    },
+    {
+      id: "military_campaign",
+      title: "⚔️ COMBINED FORCE — AIR CAMPAIGN",
+      content: `CUMULATIVE STRIKES: CENTCOM reports 3,000+ targets struck since 28 February. IDF struck 300+ targets in Iran in the 48 hours ending 7 March. 2,500 total IDF strikes, 6,000+ weapons expended. 80% of Iranian air defences assessed destroyed.
+
+OIL INFRASTRUCTURE (Day 8 — first time): IDF struck Tondgouyan Oil Refinery (Tehran Province, one of Iran's largest) and Shahran Oil Refinery (Tehran City, capacity for 3 days of Tehran fuel across 11 storage tanks). Additional oil storage facilities struck in Karaj (Alborz Province) and Tehran City — first recorded strikes on these sites. IDF stated targets directly supported Iran's military-industrial complex. Disruptions will worsen Iran's ongoing energy crisis; daily blackouts have been reported since February 2025.
+
+IRGC COMMAND & CONTROL: IRGC General Command HQ struck 4 March — satellite imagery from 6 March shows extensive damage to four buildings. IRGC Aerospace Force air defense command centre west of Tehran struck 7 March. Aerospace Force service HQ (Kuhak neighbourhood, Tehran) also struck. IRGC internal security unit headquarters — responsible for suppressing protests — destroyed.
+
+MISSILE PRODUCTION: Parchin Military Complex struck 5 March — Institute for Science and International Security assessed 2-3 solid propellant production facilities destroyed (previously destroyed in Oct 2024 and Jun 2025, Iran re-equipped). IRGC Shahroud Missile Facility (Semnan Province) struck within past week — facility used to develop, test, and launch solid-propellant missiles. Khojir Missile Production Complex (Tehran Province) struck approx. 3 March — planetary mixers and casting facilities damaged. Raja Shimi Industries (adjacent to Imam Sajjad Missile Base, Tehran Province) struck multiple times including 4 March.
+
+ELECTRONICS & AIR DEFENCE: Shiraz Electronics Industries (SEI, Fars Province) struck at least 13 times per satellite imagery — produces radars, avionics, missile guidance under US sanctions.
+
+NAVAL: 30+ vessels sunk including drone carrier IRIS Shahid Bagheri, forward base IRIS Makran (121,000 tons), Kilo-class submarine, IRIS Dena (torpedoed off Sri Lanka). Konarak and Bandar Abbas naval bases devastated.
+
+NUCLEAR: B-2 Spirit bombers dropped MOPs (Massive Ordnance Penetrators) on Fordo, Natanz, and Isfahan nuclear sites.
+
+USS GEORGE H.W. BUSH CSG: Completed Composite Training Unit Exercise 6 March. Commander Rear Admiral Walker: "ready for major combat operations worldwide." Next expected US CSG deployment — would bring total to 3 CSGs in CENTCOM AOR.`
+    },
+    {
+      id: "iran_response",
+      title: "🇮🇷 IRAN — RETALIATORY POSTURE",
+      content: `LAUNCH CAPACITY: ~120 missile launchers remaining (IDF estimate, 7 Mar; consistent with IDF 6 Mar estimate of 100-200). Ballistic missile attacks down ~90% since Day 1 (CENTCOM Admiral Cooper, 5 Mar). Drone attacks down ~83%.
+
+CASUALTIES (Iran): 1,332 killed (Iranian Red Crescent). Hengaw NGO: 2,400 including 310 civilians. UNICEF: at least 181 children killed. 6,000+ wounded. ~2,000 targets struck.
+
+REGIME CRISIS: Khamenei killed Day 1. Wife Mansoureh Khojasteh Bagherzadeh died of injuries 2 March. Assembly of Experts convened under IRGC pressure to select Mojtaba Khamenei (son, 56) as successor. IRGC control over succession process is near-total. Leadership Council assumed supreme leader duties.
+
+PEZESHKIAN CRISIS (7 Mar): President Pezeshkian apologised to Gulf states for attacks, stated Leadership Council ordered armed forces not to attack countries unless attacked first. Hardline MP Hamid Rasaei: statement "weak, unprofessional, and unacceptable." Senior IRGC commanders reportedly furious. Pezeshkian's office subsequently released a sanitised readout omitting the apology — almost certainly a response to backlash. Factional split between pragmatists (negotiation = survival) and hardliners (negotiation = capitulation) is now public.
+
+BACK-CHANNEL: CNN (4 Mar) reported Iranian intelligence sent back-channel to US signalling possible openness to talks. FM Araghchi simultaneously stated "no reason to negotiate." Trump publicly confirmed Iran had "sought to make a deal." Contradiction reflects factional competition. FM Araghchi: "no timeline for ceasefire." Internet blackout in Iran exceeded 100+ hours.`
+    },
+    {
+      id: "gulf_regional",
+      title: "🌍 GULF STATES & REGIONAL",
+      content: `UAE: 1,270+ projectiles total — Day 7 saw first ballistic missile land on UAE territory (3 killed, 78 injured). DXB T3, Jebel Ali, Palm Jumeirah, Al Dhafra, Fujairah all struck. UAE warned it will not sit "cross-armed." Etihad resuming limited schedule.
+
+BAHRAIN: Oil refinery hit Day 7. 5th Fleet HQ struck. 75+ missiles + 123+ drones. 1 killed. Hayat Palace Hotel hit by drone 3 March (contradicting Pezeshkian's claim of US-only targeting). AWS offline. Shia crackdown ongoing.
+
+SAUDI ARABIA: Ras Tanura (550,000 b/d) hit twice — Saudi Arabia's largest domestic oil refinery and export terminal forced to close. US Embassy Riyadh struck. MBS emergency cabinet convened. Zelensky called MBS 7 March, offered Ukraine's Shahed interception expertise. Pipeline bypass (East-West) active. MBS previously identified Ras Tanura attacks as a "red line."
+
+KUWAIT: 6 US KIA at Port Shuaiba. Ali al-Salem Air Base struck. Friendly fire: 3 US F-15E fighters downed. US Embassy CLOSED. 97 ballistic + 283 drones intercepted.
+
+QATAR: Stay indoors order. Force majeure declared at Ras Laffan LNG and Mesaieed. 2 Iranian Su-24 bombers shot down — first manned Iranian aircraft shot down in conflict. 10 IRGC spies arrested. Al Udeid struck. US and Qatar in talks to purchase Ukrainian interceptor drones (Reuters, 5 Mar).
+
+OMAN: Largely spared — mediator role. Pre-war breakthrough brokered 27 Feb (Omani FM Al-Busaidi announced Iran agreed to never stockpile enriched uranium + full IAEA verification). Breakthrough ignored within hours as strikes began. Oil storage damaged.
+
+ISRAEL: 11 killed, 160+ injured from Iranian retaliatory strikes. Beit Shemesh synagogue: 9 killed. 90+ Iranian strikes on Israel Days 1-5 (ACLED). Strike rate declining: 90 per day → 20 per day. 70,000 reservists called up. Day 7: hybrid drone + missile attack on Tel Aviv.
+
+LEBANON/HEZBOLLAH: 250+ IDF strikes across Lebanon. 50+ killed, 330+ injured. Hezbollah intelligence chief Hussein Mekeld and Mohammad Raad killed. Hezbollah launched first missiles on northern Israel since Nov 2024 (2 Mar). Long-range missile hit Tel Aviv 4 Mar.
+
+AZERBAIJAN: 4 Iranian drones struck Nakhchivan exclave — terminal of Nakhchivan International Airport hit, drone landed near school in Shakarabad village. First Iranian attack on Azerbaijan in this conflict. Army on full combat readiness.
+
+IRAQ: Iran targeted Kurdish groups. Shiite Ayatollah Sistani condemned strikes as violation of international law. Iraq cut 1.5M b/d — could double.
+
+UKRAINE: Zelensky-MBS call 7 Mar. Ukraine has ~90% interception rate against Shahed drones (years of experience vs Russian/Iranian drones). Ukraine "ready to help" Saudi Arabia.`
+    },
+    {
+      id: "energy_markets",
+      title: "⚡ ENERGY & MARKETS",
+      content: `STRAIT OF HORMUZ: CLOSED. 150+ tankers anchored. Houthis not yet fully active — dual chokepoint (Hormuz + Bab el-Mandeb) risk pending. Trump administration "actively calculating" escort operation. Mining risk growing.
+
+OIL: Brent $85.12. Iraq -1.5M b/d (could double). QatarEnergy force majeure. Saudi Aramco rerouting via East-West pipeline. Ras Tanura offline. IDF strikes on Iranian oil refineries add direct supply pressure.
+
+MARKETS (Day 7 baseline): Dow Jones -1,000 pts (-2.2%). Kospi -11% (circuit breaker triggered). KSE-100 -9.57% (record low). Nikkei -4.3%. TTF gas peaked €60+. China refineries shutting. Airlines -6%. Defence stocks surging. US gasoline: largest price spike in 4 years. CSIS estimate: first 100 hours cost $3.7B.
+
+FINANCIAL: Central banks paralysed. EM currency crises emerging. Congressional munitions supplemental pending — logistics ceiling approaching.`
+    },
+    {
+      id: "political_us",
+      title: "🇺🇸 US POLITICAL & WAR POWERS",
+      content: `Trump: "UNCONDITIONAL SURRENDER" — "no time limits." Gang of Eight pre-briefed before strikes. Both chambers rejected War Powers Resolution: House 212-219, Senate 53-47.
+
+National Intelligence Council classified report (Washington Post, 7 Mar): even a large-scale assault on Iran is unlikely to oust the Islamic Republic's entrenched military and clerical establishment — a sobering assessment as administration raises prospect of extended campaign that officials say has "only just begun."
+
+CENTCOM Admiral Cooper (5 Mar): ballistic missile attacks from Iran down roughly 90% since strikes began. 3,000+ targets struck.`
+    },
+    {
+      id: "watchlist",
+      title: "🔍 CRITICAL WATCH",
+      content: `1. SUCCESSION: Assembly of Experts selection of Mojtaba Khamenei — IRGC vs pragmatist faction. Resolution determines ceasefire probability.
+2. PEZESHKIAN vs HARDLINERS: Escalating factional split. IRGC effectively running foreign policy. Watch for any leadership council purge.
+3. USS GEORGE H.W. BUSH: Third CSG deployment to CENTCOM = major escalation signal. Watch departure date.
+4. HORMUZ ESCORT OPERATION: Trump admin timeline. Mining risk. Dual chokepoint activation if Houthis re-engage.
+5. $100 OIL BARRIER: Psychological and economic threshold. Central bank paralysis. EM contagion risk.
+6. UAE ESCALATION: First ballistic missile landing — precedent set. Declining interception rate. Iranian retaliation cycle.
+7. UKRAINE-GULF DRONE DEAL: If executed, shifts air defence dynamics across Gulf.
+8. IRAN OIL INFRASTRUCTURE: First strikes on refineries 7 Mar — energy crisis acceleration. Civilian impact escalation risk.
+9. CONGRESSIONAL MUNITIONS SUPPLEMENTAL: Vote pending. Without it, logistics ceiling limits campaign duration.
+10. NIC REPORT FALLOUT: Intel assessment contradicts Trump objectives — political pressure on administration strategy.`
+    }
+  ]
+};
+
+function IntelBrief() {
+  const [copied, setCopied] = useState(false);
+  const fullText = [
+    `MANDAI TECH — INTELLIGENCE BRIEF`,
+    `${INTEL_BRIEF.day} — Updated: ${INTEL_BRIEF.updated}`,
+    `Classification: ${INTEL_BRIEF.classification}`,
+    `Source: ${INTEL_BRIEF.source}`,
+    ``,
+    ...INTEL_BRIEF.sections.map(s => `${s.title}\n\n${s.content}\n`)
+  ].join("\n");
+
+  function handleCopy() {
+    navigator.clipboard.writeText(fullText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+
+  function handleDownload() {
+    const blob = new Blob([fullText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `MandAI_Intel_Brief_${INTEL_BRIEF.updated.replace(/ /g,"_")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div>
+      <div style={{background:"#0f172a",borderRadius:12,padding:"18px 20px",marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:800,color:"#f59e0b",letterSpacing:"0.15em",fontFamily:"'DM Mono',monospace"}}>{INTEL_BRIEF.classification}</div>
+            <div style={{fontSize:20,fontWeight:800,color:"#fff",margin:"6px 0 4px"}}>Intelligence Brief — {INTEL_BRIEF.day}</div>
+            <div style={{fontSize:12,color:"#64748b",fontFamily:"'DM Mono',monospace"}}>Updated: {INTEL_BRIEF.updated} · MandAI Tech</div>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={handleCopy} style={{padding:"8px 16px",fontSize:12,fontWeight:700,background:copied?"#16a34a":"#1e293b",color:"#fff",border:"1px solid #334155",borderRadius:8,cursor:"pointer"}}>
+              {copied ? "✓ Copied" : "📋 Copy"}
+            </button>
+            <button onClick={handleDownload} style={{padding:"8px 16px",fontSize:12,fontWeight:700,background:"#7c3aed",color:"#fff",border:"none",borderRadius:8,cursor:"pointer"}}>
+              ⬇️ Download
+            </button>
+          </div>
+        </div>
+      </div>
+      {INTEL_BRIEF.sections.map(s => (
+        <div key={s.id} style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",marginBottom:10,overflow:"hidden"}}>
+          <div style={{padding:"12px 18px",background:"#f8fafc",borderBottom:"1px solid #e2e8f0"}}>
+            <span style={{fontSize:13,fontWeight:800,color:"#0f172a"}}>{s.title}</span>
+          </div>
+          <div style={{padding:"14px 18px"}}>
+            {s.content.split("\n\n").map((para, i) => (
+              <p key={i} style={{fontSize:13,lineHeight:1.7,color:"#1e293b",marginBottom:i < s.content.split("\n\n").length-1 ? 10 : 0, whiteSpace:"pre-line"}}>
+                {para}
+              </p>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function LiveBox({ name }) {
@@ -457,22 +629,7 @@ export default function App() {
       </div>
       <div style={{maxWidth:820,margin:"0 auto",padding:"14px 20px 40px"}}>
         {tab==="strikes"?(
-          <>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
-              {Object.entries(SL).map(([k,v])=>(
-                <button key={k} onClick={()=>setSc(k)} style={{padding:"8px 14px",fontSize:12,fontWeight:sc===k?700:500,background:sc===k?"#0f172a":"#fff",color:sc===k?"#fff":"#334155",border:"1px solid #e2e8f0",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
-                  <span>{v.flag}</span><span>{k}</span>
-                  <span style={{fontSize:9,fontWeight:800,color:TL[v.threat].color,background:TL[v.threat].bg,padding:"2px 5px",borderRadius:3,fontFamily:"'DM Mono',monospace"}}>{TL[v.threat].label}</span>
-                </button>
-              ))}
-            </div>
-            <div style={{fontSize:13,color:"#475569",marginBottom:12,lineHeight:1.6}}>{sl.summary}</div>
-            <SB stats={sl.stats}/>
-            <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
-              <button onClick={expandAll} style={{fontSize:11,color:"#64748b",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontWeight:600}}>{sl.days.every(d=>exp[`${sc}-${d.date}`])?"Collapse":"Expand All"}</button>
-            </div>
-            {sl.days.map(d=><SD key={`${sc}-${d.date}`} d={d} isE={!!exp[`${sc}-${d.date}`]} onT={()=>tog(`${sc}-${d.date}`)}/>)}
-          </>
+          <IntelBrief/>
         ):(
           <>
             <div style={{display:"flex",justifyContent:"flex-end",marginBottom:10}}>
@@ -483,7 +640,7 @@ export default function App() {
         )}
       </div>
       <div style={{background:"#0f172a",padding:"18px 20px",textAlign:"center"}}>
-        <div style={{fontSize:10,color:"#475569",fontFamily:"'DM Mono',monospace"}}>ACHERNAR ASSETS — INTELLIGENCE BRIEF — CONFIDENTIAL</div>
+        <div style={{fontSize:10,color:"#475569",fontFamily:"'DM Mono',monospace"}}>MANDAI TECH — INTELLIGENCE BRIEF — CONFIDENTIAL</div>
         <div style={{fontSize:9,color:"#334155",marginTop:3}}>Al Jazeera · CNN · Bloomberg · Reuters · CNBC · NBC · NPR · PBS · Wikipedia · Axios · Breaking Defense · Stars&Stripes · Oxford Economics · Alma · BFMTV · State Dept</div>
       </div>
     </div>
