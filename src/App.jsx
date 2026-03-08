@@ -1,6 +1,6 @@
-import { useState } from "react";
-const UPD = "6 March 2026, 22:00 CET";
-const DAY = 7;
+import { useState, useEffect } from "react";
+const CONFLICT_START = new Date("2026-02-28T00:00:00Z");
+const DAY = Math.max(1, Math.floor((Date.now() - CONFLICT_START.getTime()) / 86400000) + 1);
 const TL = { CRITICAL: { color: "#dc2626", bg: "#fef2f2", label: "CRITICAL" }, HIGH: { color: "#ea580c", bg: "#fff7ed", label: "HIGH" }, ELEVATED: { color: "#ca8a04", bg: "#fefce8", label: "ELEVATED" }, MODERATE: { color: "#2563eb", bg: "#eff6ff", label: "MODERATE" }, LOW: { color: "#16a34a", bg: "#f0fdf4", label: "LOW" } };
 const cats = [ { id: "strikes", label: "⚡ Strike Logs" }, { id: "bell", label: "Belligerents" }, { id: "gulf", label: "Gulf States" }, { id: "pow", label: "Great Powers" }, { id: "reg", label: "Regional" }, { id: "nrg", label: "Energy & Markets" } ];
 const SL = {
@@ -321,7 +321,7 @@ const SEARCH_TERMS = {
 
 async function fetchLiveUpdate(name) {
   const q = encodeURIComponent(SEARCH_TERMS[name] || SEARCH_TERMS.default);
-  const res = await fetch(`/api/feed?q=${q}`);
+ const res = await fetch(`/api/feed?name=${encodeURIComponent(name)}`);
   if (!res.ok) throw new Error(`Feed error ${res.status}`);
   const data = await res.json();
   if (!data.items || data.items.length === 0) throw new Error("No articles found");
@@ -381,6 +381,7 @@ function LiveBox({ name }) {
   );
 }
 
+
 const SD = ({d,isE,onT}) => { const t=TL[d.t]; return (<div style={{background:"#fff",borderRadius:10,border:"1px solid #e2e8f0",marginBottom:8,overflow:"hidden",boxShadow:isE?"0 4px 20px rgba(0,0,0,0.07)":"none"}}><div onClick={onT} style={{padding:"12px 16px",display:"flex",alignItems:"center",cursor:"pointer",gap:10,userSelect:"none"}}><div style={{fontSize:11,fontWeight:700,color:"#64748b",fontFamily:"'DM Mono',monospace",minWidth:48}}>{d.date}</div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:"#0f172a"}}>{d.title}</div></div><span style={{fontSize:9,fontWeight:800,letterSpacing:"0.1em",color:t.color,background:t.bg,padding:"3px 8px",borderRadius:4,fontFamily:"'DM Mono',monospace"}}>{t.label}</span><span style={{color:"#94a3b8",fontSize:16,transform:isE?"rotate(180deg)":"rotate(0)",transition:"transform 0.2s"}}>▾</span></div>{isE&&(<div style={{padding:"0 16px 14px",borderTop:"1px solid #f1f5f9"}}><div style={{fontSize:10,color:"#64748b",padding:"8px 0 6px",fontFamily:"'DM Mono',monospace"}}>🛡️ {d.def}</div>{d.items.map((it,i)=>(<div key={i} style={{fontSize:12.5,lineHeight:1.6,color:"#1e293b",padding:"4px 0 4px 12px",borderLeft:"2px solid #e2e8f0"}}>{it}</div>))}</div>)}</div>); };
 const SB = ({stats}) => (<div style={{background:"#1e293b",borderRadius:10,padding:"14px 16px",marginBottom:14,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:10}}>{stats.map((s,i)=>(<div key={i} style={{textAlign:"center"}}><div style={{fontSize:20,fontWeight:700,color:"#fff",fontFamily:"'DM Mono',monospace"}}>{s.v}</div><div style={{fontSize:9,fontWeight:700,color:"#94a3b8",letterSpacing:"0.08em",textTransform:"uppercase"}}>{s.l}</div>{s.s&&<div style={{fontSize:9,color:"#64748b",marginTop:1}}>{s.s}</div>}</div>))}</div>);
 
@@ -439,7 +440,6 @@ export default function App() {
           </div>
           <h1 style={{fontSize:20,fontWeight:700,margin:"0 0 2px",letterSpacing:"-0.02em"}}>Iran Conflict Geopolitical Tracker</h1>
           <div style={{fontSize:12,color:"#94a3b8"}}>Strike logs · Geopolitical · Military · Economic · Diplomatic</div>
-          <div style={{fontSize:11,color:"#64748b",marginTop:4,fontFamily:"'DM Mono',monospace"}}>Base data: {UPD} · Live updates: on demand via RSS proxy</div>
         </div>
       </div>
       <div style={{background:"#7f1d1d",color:"#fecaca",padding:"12px 20px"}}>
