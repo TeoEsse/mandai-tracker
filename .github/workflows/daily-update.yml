@@ -1,0 +1,16 @@
+name: Daily AI Update
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # 07:00 CET (06:00 UTC) every day
+  workflow_dispatch:        # allows manual trigger from GitHub UI
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger claude-update
+        run: |
+          curl -f -s "https://mandai-tracker2.vercel.app/api/claude-update" \
+            && echo "✅ Update successful" \
+            || echo "❌ Update failed"
