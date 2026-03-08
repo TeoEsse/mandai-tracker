@@ -1,32 +1,36 @@
-const QUERIES = {
-  default: "iran+war+conflict",
-  "United States": "trump+pentagon+iran+strikes",
-  "Israel": "israel+idf+iran",
-  "Iran": "iran+irgc+tehran",
-  "Lebanon": "hezbollah+lebanon",
-  "UAE": "UAE+dubai+missile",
-  "Qatar": "qatar+LNG+al+udeid",
-  "Bahrain": "bahrain+fifth+fleet",
-  "Saudi Arabia": "saudi+aramco+iran",
-  "Kuwait": "kuwait+iran",
-  "Oman": "oman+muscat+iran",
-  "Russia": "russia+iran+war",
-  "China": "china+iran+war",
-  "Italy": "italy+meloni+iran",
-  "Turkey": "turkey+iran",
-  "Kurdish Forces": "kurdish+iran+pjak",
-  "Azerbaijan": "azerbaijan+nakhchivan+iran",
-  "Iraq": "iraq+iran+oil",
-  "Spain": "spain+iran+nato",
-  "Pakistan": "pakistan+iran",
-  "Yemen / Houthis": "houthis+yemen+redsea",
-  "Sri Lanka": "srilanka+iran+ship",
-  "European Naval Coalition": "europe+naval+iran",
-  "Ukraine": "ukraine+zelensky+iran",
-  "Strait of Hormuz": "hormuz+strait+tanker",
-  "Global Markets": "oil+brent+iran+markets",
+const FEEDS = [
+  "https://feeds.reuters.com/reuters/worldNews",
+  "https://www.aljazeera.com/xml/rss/all.xml",
+  "https://feeds.bbci.co.uk/news/world/rss.xml",
+];
+const KEYWORDS = {
+  default: ["iran", "conflict", "strike", "missile", "drone", "hormuz"],
+  "United States": ["us ", "united states", "american", "pentagon", "trump", "centcom"],
+  "Israel": ["israel", "idf", "netanyahu"],
+  "Iran": ["iran", "irgc", "tehran", "khamenei"],
+  "Lebanon": ["lebanon", "hezbollah", "beirut"],
+  "UAE": ["uae", "dubai", "abu dhabi", "emirates"],
+  "Qatar": ["qatar", "doha", "al udeid"],
+  "Bahrain": ["bahrain", "manama"],
+  "Saudi Arabia": ["saudi", "riyadh", "aramco"],
+  "Kuwait": ["kuwait"],
+  "Oman": ["oman", "muscat"],
+  "Russia": ["russia", "putin", "moscow"],
+  "China": ["china", "beijing", "xi"],
+  "Turkey": ["turkey", "erdogan", "ankara"],
+  "Italy": ["italy", "italia", "meloni", "crosetto"],
+  "Kurdish Forces": ["kurdish", "pjak"],
+  "Azerbaijan": ["azerbaijan", "nakhchivan"],
+  "Iraq": ["iraq", "baghdad"],
+  "Spain": ["spain", "madrid"],
+  "Pakistan": ["pakistan", "islamabad"],
+  "Yemen / Houthis": ["houthis", "yemen", "sanaa"],
+  "Sri Lanka": ["sri lanka", "colombo"],
+  "European Naval Coalition": ["european naval", "cyprus", "mediterranean"],
+  "Ukraine": ["ukraine", "zelensky", "kyiv"],
+  "Strait of Hormuz": ["hormuz", "strait", "tanker", "oil"],
+  "Global Markets": ["oil", "brent", "market", "stock"],
 };
-
 function parseRSS(xml) {
   const items = [];
   const matches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
@@ -40,25 +44,27 @@ function parseRSS(xml) {
   }
   return items;
 }
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   const name = req.query.name || "default";
-  const q = QUERIES[name] || QUERIES.default;
-  const url = `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`;
-
-  try {
-    const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
-    const xml = await r.text();
-    const items = parseRSS(xml).slice(0, 5).map(item => ({
-      title: item.title?.replace(/ - .*$/, ""),
-      source: item.title?.match(/ - (.+)$/)?.[1] || "News",
-      date: item.pubDate ? new Date(item.pubDate).toLocaleString() : "",
-      link: item.link,
-      snippet: item.description?.replace(/<[^>]*>/g, "").slice(0, 150) || "",
-    }));
-    res.status(200).json({ items });
-  } catch(e) {
-    res.status(500).json({ error: e.message });
+  const kws = KEYWORDS[name] || KEYWORDS.default;
+  const allItems = [];
+  for (const feed of FEEDS) {
+    try {
+      const r = await fetch(feed, { headers: { "User-Agent": "MandAI-Tracker/1.0" } });
+      const xml = await r.text();
+      allItems.push(...parseRSS(xml));
+    } catch(e) { /* skip */ }
   }
+  const relevant = allItems
+    .filter(item => kws.some(k => `${item.title} ${item.description}`.toLowerCase().includes(k)))
+    .slice(0, 5);
+  const result = (relevant.length > 0 ? relevant : allItems.slice(0, 5)).map(item => ({
+    title: item.title,
+    source: (() => { try { return new URL(item.link).hostname.replace("www.", ""); } catch(e) { return "News"; } })(),
+    date: item.pubDate ? new Date(item.pubDate).toLocaleString() : "",
+    link: item.link,
+    snippet: item.description?.replace(/<[^>]*>/g, "").slice(0, 150),
+  }));
+  res.status(200).json({ items: result });
 }
