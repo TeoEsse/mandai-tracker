@@ -323,6 +323,7 @@ function mergeIntelBrief(defaults, aiBrief) {
   return {
     ...defaults,
     updated: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
+    breakingBanner: aiBrief.breakingBanner || defaults.breakingBanner || null,
     sections: defaults.sections.map(section => {
       const aiKey = Object.keys(keyToId).find(k => keyToId[k] === section.id);
       if (!aiKey || !aiBrief[aiKey]) return section;
@@ -644,7 +645,7 @@ export default function App() {
       <div style={{ background: "#7f1d1d", color: "#fecaca", padding: "12px 20px" }}>
         <div style={{ maxWidth: 820, margin: "0 auto", fontSize: 12.5, lineHeight: 1.7 }}>
           <strong style={{ color: "#fbbf24" }}>⚡ DAY {DAY}:</strong>{" "}
-          Israel hits Iran oil refineries — first time. Assembly of Experts: consensus on new Supreme Leader. UAE: 1,184 drones, 205 missiles total. Gulf allies low on interceptors. Kuwait: drone attack ongoing. Trump: 'clean out' Iran regime. Hormuz closed. Brent $85.
+          {brief.breakingBanner || "Israel hits Iran oil refineries — first time. Assembly of Experts: consensus on new Supreme Leader. UAE: 1,184 drones, 205 missiles total. Gulf allies low on interceptors. Kuwait: drone attack ongoing. Trump: 'clean out' Iran regime. Hormuz closed. Brent $85."}
         </div>
       </div>
 
