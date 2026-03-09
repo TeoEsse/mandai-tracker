@@ -174,10 +174,12 @@ Return ONLY a valid JSON object — no prose, no markdown, no code fences:
   "gulfRegional": "<2-3 sentences: Gulf states and regional actor dynamics>",
   "energyMarkets": "<2-3 sentences: Hormuz, oil prices, shipping disruption>",
   "usPolitical": "<2-3 sentences: US political situation, War Powers, Congress>",
-  "watchlist": ["<watch item 1>", "<watch item 2>", "<watch item 3>", "<watch item 4>", "<watch item 5>"]
+  "watchlist": ["<watch item 1>", "<watch item 2>", "<watch item 3>", "<watch item 4>", "<watch item 5>"],
+  "breakingBanner": "<single line, max 200 chars: the 3-4 most important developments of the last 24h, separated by full stops. No day number prefix.>"
 }
 
 watchlist = JSON array of exactly 5 short strings, each a critical watch item.
+breakingBanner = one compact line of the top developments, written like a wire ticker. No 'Day X' prefix.
 Intelligence-brief style: factual, no hedging, no filler. Return ONLY the JSON object.`;
 }
 
