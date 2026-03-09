@@ -191,8 +191,8 @@ const CC_DEFAULT = [
 
 // ─── Hardcoded Intel Brief (fallback) ─────────────────────────────────────────
 const INTEL_BRIEF_DEFAULT = {
-  updated: "8 March 2026",
-  day: "Day 9",
+  updated: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
+  day: `Day ${DAY}`,
   classification: "UNCLASSIFIED // OPEN SOURCE",
   source: "CTP-ISW · GlobalSecurity · ACLED · CENTCOM · IDF · open sources",
   sections: [
