@@ -1,4 +1,3 @@
-
 /**
  * api/get-cache.js
  * MandAI Iran Conflict Tracker — Serve Cached Data
@@ -19,7 +18,6 @@ const CACHE_KEY = "mandai_tracker_data";
 
 async function redisGet(key) {
   const url = process.env.KV_REST_API_URL;
-  // Prefer read-only token for GET operations if available
   const token =
     process.env.KV_REST_API_READ_ONLY_TOKEN || process.env.KV_REST_API_TOKEN;
 
@@ -27,9 +25,7 @@ async function redisGet(key) {
 
   const res = await fetch(`${url}/get/${encodeURIComponent(key)}`, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!res.ok) {
@@ -42,7 +38,15 @@ async function redisGet(key) {
   // Upstash returns { result: "<stringified JSON>" } or { result: null }
   if (json.result === null || json.result === undefined) return null;
 
-  return JSON.parse(json.result);
+  const parsed = JSON.parse(json.result);
+
+  // When redisSet stores {value, ex} as a JSON body, Upstash saves the whole
+  // object — unwrap the inner .value string if present
+  if (parsed && typeof parsed.value === "string") {
+    return JSON.parse(parsed.value);
+  }
+
+  return parsed;
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
@@ -52,15 +56,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Allow frontend (same origin) and local dev to call this freely
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "no-store"); // always serve fresh from Redis
+  res.setHeader("Cache-Control", "no-store");
 
   try {
     const data = await redisGet(CACHE_KEY);
 
     if (!data) {
-      // Cache miss — frontend will use hardcoded fallback data
       return res.status(200).json({ data: null, source: "cache_miss" });
     }
 
@@ -71,7 +73,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error("[get-cache] ERROR:", err.message);
-    // Return null data so the frontend degrades gracefully
     return res.status(200).json({
       data: null,
       source: "error",
